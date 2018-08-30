@@ -5,9 +5,20 @@
 	<meta name="viewport" content="width=device-width, user-scalable=no">
 
 	<style>
+	@media only screen and (max-width: 449px) {
+		body {
+			--gutter: 16px;
+		}
+	}
+	@media only screen and (min-width: 450px) {
+		body {
+			--gutter: 24px;
+		}
+	}
 	body {
 		margin: auto;
 		font-family: 'Segoe UI', 'Roboto', sans-serif;
+		padding: var(--gutter);
 	}
 	body[fluent] {
 		font-family: 'Segoe UI', sans-serif;
@@ -22,12 +33,13 @@
 	* {
 		box-sizing: border-box;
 	}
-	.list {
+	.modules {
 		margin: auto;
 		display: flex;
 		flex-wrap: wrap;
+		margin: calc(var(--gutter) / -2);
 	}
-		.card {
+		[card] {
 			transition: all 160ms;
 			background-color: rgb(
 				var(--background-r, 255),
@@ -41,13 +53,12 @@
 			);
 			position: relative;
 			overflow: hidden;
-			width: 320px;
 			height: 160px;
 			display: flex;
 			flex-direction: column;
 			/*justify-content: flex-end;*/
-			margin: 16px;
-			padding: 10px 16px;
+			margin: calc(var(--gutter) / 2);
+			padding: 10px var(--gutter);
 			/*box-shadow: 0px 7px 29px -9px rgba(0, 0, 0, 0.7);*/
 			box-shadow: var(--card-shadow) rgba(
 				var(--shadow-r, 0),
@@ -56,10 +67,20 @@
 				var(--shadow-a, 0.6)
 			);
 		}
-		[material] .card {
+		@media only screen and (max-width: 449px) {
+			.modules {
+				flex-direction: column;
+			}
+		}
+		@media only screen and (min-width: 450px) {
+			.modules [card] {
+				width: 320px;
+			}
+		}
+		[material] [card] {
 			border-radius: 6px;
 		}
-		.card:hover {
+		[card]:hover {
 			box-shadow: 0px 7px 30px -7px rgba(
 				var(--shadow-r, 0),
 				var(--shadow-g, 0),
@@ -67,12 +88,12 @@
 				var(--shadow-a, 0.8)
 			);
 		}
-			.card > p {
+			[card] > p {
 				margin: 5px 0;
 				position: relative;
 				z-index: 1;
 			}
-			.card > .name {
+			[card] > .name {
 				font-size: 24px;
 				line-height: 24px;
 				font-weight: 700;
@@ -82,13 +103,13 @@
 				overflow: hidden;
 			    */
 			}
-			.card > .description {
+			[card] > .description {
 				font-size: 14px;
 				opacity: 0.8;
 				text-overflow: ellipsis;
 				overflow: hidden;
 			}
-			.card > .emoji {
+			[card] > .emoji {
 				opacity: 0.075;
 				font-size: 170px;
 				white-space: nowrap;
@@ -108,7 +129,7 @@
 <body>
 
 
-	<div class="list">
+	<div class="modules">
 
 		<!--
 		<div class="card">
@@ -127,8 +148,7 @@
 
 	<script src="node_modules/iridescent/index.js"></script>
 	<script src="node_modules/platform-detect/index.js"></script>
-	<script src="data.js"></script>
-	<script src="dash.js"></script>
+	<script type="module" src="dashboard.mjs"></script>
 
 </body>
 </html>
