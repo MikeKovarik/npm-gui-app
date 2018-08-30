@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+<head>
+
+	<meta name="viewport" content="width=device-width, user-scalable=no">
+
+	<style>
+	body {
+		margin: auto;
+		font-family: "Segoe UI";
+		background-color: #EEE;
+	}
+	* {
+		box-sizing: border-box;
+	}
+	.list {
+		max-width: 1400px;
+		margin: auto;
+		display: flex;
+		flex-wrap: wrap;
+	}
+		.card {
+			transition: all 160ms;
+			background-color: rgb(
+				var(--background-r, 255),
+				var(--background-g, 255),
+				var(--background-b, 255)
+			);
+			color: rgb(
+				var(--foreground-r, 0),
+				var(--foreground-g, 0),
+				var(--foreground-b, 0)
+			);
+			position: relative;
+			overflow: hidden;
+			width: 320px;
+			height: 160px;
+			display: flex;
+			flex-direction: column;
+			/*justify-content: flex-end;*/
+			margin: 16px;
+			padding: 10px 16px;
+			/*box-shadow: 0px 7px 29px -9px rgba(0, 0, 0, 0.7);*/
+			box-shadow: 0px 7px 29px -9px rgba(
+				var(--shadow-r, 0),
+				var(--shadow-g, 0),
+				var(--shadow-b, 0),
+				var(--shadow-a, 0.6)
+			);
+		}
+		.card:hover {
+			box-shadow: 0px 7px 30px -7px rgba(
+				var(--shadow-r, 0),
+				var(--shadow-g, 0),
+				var(--shadow-b, 0),
+				var(--shadow-a, 0.8)
+			);
+		}
+			.card > p {
+				margin: 5px 0;
+				position: relative;
+				z-index: 1;
+			}
+			.card > .name {
+				font-size: 24px;
+				line-height: 24px;
+				font-weight: 700;
+				/*
+				white-space: pre;
+				text-overflow: ellipsis;
+				overflow: hidden;
+			    */
+			}
+			.card > .description {
+				font-size: 14px;
+				opacity: 0.8;
+				text-overflow: ellipsis;
+				overflow: hidden;
+			}
+			.card > .emoji {
+				opacity: 0.075;
+				font-size: 170px;
+				white-space: nowrap;
+				filter: blur(6px); 
+				position: absolute;
+				z-index: 0;
+				left: 0;
+				top: -10px;
+				right: 0;
+				bottom: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+	</style>
+</head>
+<body>
+
+
+	<div class="list">
+
+		<!--
+		<div class="card">
+			<p class="name">uwp-node</p>
+			<p class="description">🎯 Run full Node.js scripts from Windows UWP apps through C# broker process.</p>
+			<span class="emoji">🎯</span>
+		</div>
+
+		<div class="card">
+			<p class="name">electron-windows-store</p>
+			<p class="description">⌨️ Text processing toolkit for conversions, encoding, cipher translation, checksum calculation, hashing, encryption and formatting for developers and ARG enthusiasts.</p>
+		</div>
+-->
+	</div>
+
+
+	<script src="data.js"></script>
+	<script src="dash.js"></script>
+
+</body>
+</html>
