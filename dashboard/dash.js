@@ -1,86 +1,9 @@
-// TODO: try to extract image from the project as well
+var platform = window['platform-detect']
 
+platform.fluent = platform.windows
+platform.material = !platform.fluent
 
-class Color {
-
-	static _extractRgb(args) {
-		if (args.length === 1) {
-			return args[0]
-		} else {
-			var [r, g, b] = args
-			return {r, g, b}
-		}
-	}
-
-	static rgbToHex(...args) {
-		var {r, g, b} = this._extractRgb(args)
-	    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-	}
-
-	static foreground(...args) {
-		var {r, g, b} = this._extractRgb(args)
-		var luminance = this.luminance(r, g, b)
-		console.log(r,g,b, luminance)
-		if (luminance < 140)
-			r = g = b = 255
-		else
-			r = g = b = 0
-		return {r, g, b}
-	}
-
-	static luminance(...args) {
-		var {r, g, b} = this._extractRgb(args)
-		return (0.2126 * r + 0.7152 * g + 0.0722 * b)
-	}
-
-	static isBlack(...args) {
-		var {r, g, b} = this._extractRgb(args)
-		return r === 0 && g === 0 && b === 0
-	}
-
-	static isWhite(...args) {
-		var {r, g, b} = this._extractRgb(args)
-		return r === 255 && g === 255 && b === 255
-	}
-
-	// COLOR EXTRACTION
-
-	static accentAverage(canvas) {
-		var blockSize = 1
-		var context = canvas.getContext('2d')
-		var output = {r: 0, g: 0, b: 0}
-		var count = 0
-
-		var {data} = context.getImageData(0, 0, canvas.width, canvas.height)
-		
-		for (var i = 0; i < data.length; i += 4) {
-			let alpha = data[i + 3]
-			// ignore transparent alpha
-			if (data[i+3] === 0) continue
-			let r = data[i]
-			let g = data[i + 1]
-			let b = data[i + 2]
-			// ignore black
-			if (r === 0 && g === 0 && b === 0) continue
-			// ignore white
-			if (r === 255 && g === 255 && b === 255) continue
-			++count
-			output.r += r
-			output.g += g
-			output.b += b
-		}
-		
-		// ~~ used to floor values
-		output.r = ~~(output.r / count)
-		output.g = ~~(output.g / count)
-		output.b = ~~(output.b / count)
-		
-		return output	
-	}
-
-}
-
-
+document.body.setAttribute(platform.fluent ? 'fluent' : 'material', '')
 
 //renderEmoji('📦')
 //renderProject(projects[8])
@@ -108,10 +31,10 @@ function renderProject(project) {
 		var canvas = renderEmojiIntoCanvas(project.emojis[0])
 		//document.body.appendChild(canvas)
 		//return
-		project.accent = Color.accentAverage(canvas)
-		if (!Color.isWhite(project.accent) && !Color.isBlack(project.accent)) {
+		project.accent = iridescent.accentAverage(canvas)
+		if (!iridescent.isWhite(project.accent) && !iridescent.isBlack(project.accent)) {
 			project.background = project.accent
-			project.foreground = Color.foreground(project.background)
+			project.foreground = iridescent.foreground(project.background)
 		}
 	}
 
@@ -190,7 +113,7 @@ function renderProjectCard(project) {
 		$card.style.setProperty('--background-r', background.r)
 		$card.style.setProperty('--background-g', background.g)
 		$card.style.setProperty('--background-b', background.b)
-		var luminance = Color.luminance(accent)
+		var luminance = iridescent.luminance(accent)
 		if (luminance < 200) {
 			// TODO: find out better calculations for shadows
 			//var alpha = Math.min(luminance / 130, 1)

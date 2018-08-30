@@ -1,5 +1,5 @@
 var {assert} = require('chai')
-var {getProjectPath, getPackagePath, getModulesPath} = require('./index.js')
+var {getProjectPath, getPackagePath, getModulesPath} = require('./moduletree.js')
 
 describe('util functions', () => {
 

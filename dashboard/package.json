@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "extract-emoji": "^1.0.2"
+    "extract-emoji": "^1.0.2",
+    "iridescent": "^1.0.2",
+    "platform-detect": "0.0.5"
   }
 }

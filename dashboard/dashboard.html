@@ -7,14 +7,22 @@
 	<style>
 	body {
 		margin: auto;
-		font-family: "Segoe UI";
+		font-family: 'Segoe UI', 'Roboto', sans-serif;
+	}
+	body[fluent] {
+		font-family: 'Segoe UI', sans-serif;
 		background-color: #EEE;
+		--card-shadow: 0px 7px 29px -9px;
+	}
+	body[material] {
+		font-family: 'Roboto', sans-serif;
+		background-color: #FFF;
+		--card-shadow: 0px 2px 7px -1px;
 	}
 	* {
 		box-sizing: border-box;
 	}
 	.list {
-		max-width: 1400px;
 		margin: auto;
 		display: flex;
 		flex-wrap: wrap;
@@ -41,12 +49,15 @@
 			margin: 16px;
 			padding: 10px 16px;
 			/*box-shadow: 0px 7px 29px -9px rgba(0, 0, 0, 0.7);*/
-			box-shadow: 0px 7px 29px -9px rgba(
+			box-shadow: var(--card-shadow) rgba(
 				var(--shadow-r, 0),
 				var(--shadow-g, 0),
 				var(--shadow-b, 0),
 				var(--shadow-a, 0.6)
 			);
+		}
+		[material] .card {
+			border-radius: 6px;
 		}
 		.card:hover {
 			box-shadow: 0px 7px 30px -7px rgba(
@@ -114,6 +125,8 @@
 	</div>
 
 
+	<script src="node_modules/iridescent/index.js"></script>
+	<script src="node_modules/platform-detect/index.js"></script>
 	<script src="data.js"></script>
 	<script src="dash.js"></script>
 
