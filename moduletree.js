@@ -1,9 +1,7 @@
 var path = require('path').posix
 var fs = require('fs').promises
 
-
-var projectPath = 'C:/Users/Mike/OneDrive/Dev/anchora'
-
+// TODO: handle @scoped/modules
 
 function getProjectPath(somePath) {
 	var parsed = path.parse(somePath)
@@ -14,7 +12,7 @@ function getProjectPath(somePath) {
 	return parsed.dir
 }
 
-function getPackagePath(somePath) {
+function getPackageJsonPath(somePath) {
 	var parsed = path.parse(somePath)
 	if (parsed.base === 'package.json')
 		return somePath
@@ -24,7 +22,7 @@ function getPackagePath(somePath) {
 		return path.join(somePath, 'package.json')
 }
 
-function getModulesPath(somePath) {
+function getNodeModulesPath(somePath) {
 	var parsed = path.parse(somePath)
 	if (parsed.ext !== '')
 		return path.join(parsed.dir, 'node_modules')
@@ -33,143 +31,187 @@ function getModulesPath(somePath) {
 	return path.join(somePath, 'node_modules')
 }
 
+Array.prototype.promiseAll = function() {
+	return Promise.all(this)
+}
+
+Array.prototype.flat = function(depth = 1) {
+	var stack = [...this]
+	var res = []
+	while (stack.length) {
+		var next = stack.pop()
+		if (Array.isArray(next))
+			stack.push(...next)
+		else
+			res.push(next)
+	}
+	return res.reverse()
+}
 
 
-class Modules {
+class ProjectModules {
 
 	constructor(projectPath) {
-		this.installed = new Map
-		this.subTrees = new Map
-		this.unused = new Set
-		this.resolved = new Set
-		this.notInstalled = new Set
+		// explicitly included in package.json
+		this.required = new Set
+		// names of installed and 
+		this.installed = new Set
+		// names and pkgInfos of installed and resolved (package.json read) modules
+		this.resolved = new Map
+		// todo
+		this.unused = new Map
+		// todo
+		this.subTrees = {}
 
 		this.projectPath = projectPath
-		this.modulesPath = getModulesPath(projectPath)
+		this.packageJsonPath = getPackageJsonPath(projectPath)
+		this.nodeModulesPath = getNodeModulesPath(projectPath)
 
-		this.ready = this.loadAll()
+		this.resolvePackage = this.resolvePackage.bind(this)
 	}
 
-	async loadAll() {
-		// load and parse project's package.json
-		var pkg = JSON.parse(await fs.readFile(packagePath))
-		this.info = createPackageInfo(pkg)
-		// load and parse all project's dependency's package.json
-		var promises = (await fs.readdir(this.modulesPath))
-			.filter(name => !name.startsWith('.'))
-			.map(name => resolve(name))
-		await Promise.all(promises)
-		// TODO: filter out files and other junk
+	// names of required (in package.json) but not installed modules
+	get notInstalled() {
+		return Array.from(this.required).filter(name => !this.installed.has(name))
 	}
 
 	// NOTE: conceptual rework of createTree from below()
 	async createTree() {
-		await this.ready
+		// load and parse project's package.json
+		await this.loadRoot()
+		// readdir node_modules and load and parse all dependencies and their package.json
+		await this.loadInstalledNodeModules()
+		console.log('\nREQUIRED\n', this.required)
+		console.log('\nUNUSED\n', this.unused)
+		console.log('\nINSTALLED\n', this.installed)
+		console.log('\nNOTINSTALLED\n', this.notInstalled)
+		//console.log('resolved\n', this.resolved)
+		//console.log('\nsubTrees\n', this.subTrees)
+		return this.getSubTree(this.pkgInfo.name)
 	}
 
-	// NOTE: conceptual rework of createTree from below()
-	async resolve(name, reload = false) {
-		if (this.resolved.has(name) && reload === false)
-			return
-		else
-			this.resolved.add(name)
-		this.unused.delete(name)
-		//var tree = subTrees.get(name)
-		var info = await this.getPackageInfo(name, reload)
-		this.installed.set(name, info)
-		//info.dependencies.map(name => tree[name] = subTrees.get(name))
-		await Promise.all(info.dependencies.map(name => this.resolve(name)))
-		return info
+	async loadAll() {
 	}
 
-	async getPackageInfo(name, reload = false) {
-		if (this.installed.has(name) && reload === false)
-			return this.installed.get(name)
-		var packagePath = path.join(this.modulesPath, name, 'package.json')
-		try {
-			var pkg = JSON.parse(await fs.readFile(packagePath))
-			return this.createPackageInfo(pkg)
-		} catch() {}
+	getSubTree(name) {
+		var branch = this.subTrees[name]
+		if (branch) return branch
+		return this.subTrees[name] = {}
 	}
-	createPackageInfo(pkg) {
-		return {
-			name: pkg.name,
-			version: pkg.version,
-			dependencies:    Object.keys(pkg.dependencies || {}),
-			devDependencies: Object.keys(pkg.devDependencies || {})
+
+	async loadRoot() {
+		this.pkgInfo = new PackageInfo(this.packageJsonPath)
+		var {name, dependencies, devDependencies} = await this.pkgInfo.ready
+		// Create root of tree.
+		var root = this.getSubTree(name)
+		for (var name of [...dependencies, ...devDependencies]) {
+			this.required.add(name)
+			root[name] = this.getSubTree(name)
 		}
 	}
 
-	isInstalled(moduleName, moduleVersion) {
-		if (moduleVersion === undefined)
-			return this.installed.has(moduleName)
-		var info = this.installed.get(moduleName) || {}
-		return info.version == moduleVersion // TODO
+	async loadInstalledNodeModules() {
+		var names = (await fs.readdir(this.nodeModulesPath))
+		// Remove junk, TODO: more thorough filtering
+		var removeJunk = name => !name.startsWith('.')
+		names = names.filter(removeJunk)
+		// Filter out scopes, read their subfolders.
+		var scopedNames = await names
+			.filter(name => name.startsWith('@'))
+			.map(async scope => {
+				var subfolders = await fs.readdir(path.join(this.nodeModulesPath, scope))
+				return subfolders
+					.filter(removeJunk)
+					.map(subName => `${scope}/${subName}`)
+			})
+			.promiseAll()
+		// Now remove scopes
+		names = names.filter(name => !name.startsWith('@'))
+		// Reintroduce scoped modules
+		names.unshift(...scopedNames.flat())
+		this.installed = new Set(names)
+		this.unused = new Set(names)
+		await Promise.all(names.map(this.resolvePackage))
+		this.required.forEach(depName => this.unused.delete(depName))
+	}
+
+	// NOTE: conceptual rework of createTree from below()
+	async resolvePackage(name) {
+		if (this.resolved.has(name))
+			return this.resolved.get(name)
+
+		this.installed.add(name)
+
+		var packageJsonPath = path.join(this.nodeModulesPath, name, 'package.json')
+		var pkgInfo = new PackageInfo(packageJsonPath, name)
+		await pkgInfo.ready
+
+		var removeFromUnused = depName => this.unused.delete(depName)
+		if (pkgInfo.dependencies)    pkgInfo.dependencies.map(removeFromUnused)
+		if (pkgInfo.devDependencies) pkgInfo.devDependencies.map(removeFromUnused)
+
+		this.resolved.set(name, pkgInfo)
+		if (pkgInfo.dependencies)    await Promise.all(pkgInfo.dependencies.map(this.resolvePackage))
+		//if (pkgInfo.devDependencies) await Promise.all(pkgInfo.devDependencies.map(this.resolvePackage))
+
+		var tree = this.getSubTree(name)
+		for (var depName of [...pkgInfo.dependencies, ...pkgInfo.devDependencies])
+			tree[depName] = this.getSubTree(depName)
+
+		return pkgInfo
+	}
+
+	isInstalled(name, version) {
+		if (version === undefined)
+			return this.installed.has(name)
+		var pkgInfo = this.resolved.get(name) || {}
+		return pkgInfo.version == version // TODO
 	}
 	
 }
 
+class PackageInfo {
 
-var modules = new Modules(projectPath)
-
-
-
-async function createTree(projectPath) {
-	var root = {}
-	var subTrees = new Map
-	var unusedModules = new Set
-	var resolvedModules = new Set
-	var notInstalledModules = new Set
-
-	async function resolveModule(name) {
-		if (resolvedModules.has(name))
-			return
-		else
-			resolvedModules.add(name)
-		unusedModules.delete(name)
-		var tree = subTrees.get(name)
-		var depPackagePath = path.join(projectModulesPath, name, 'package.json')
-		var {dependencies, devDependencies} = await getPackageDeps(depPackagePath)
-		dependencies.map(name => tree[name] = subTrees.get(name))
-		//devDependencies.map(name => tree[name] = subTrees.get(name)) // projects deps only install sub deps, not their dev dependencies
-		await Promise.all(dependencies.map(resolveModule))
+	constructor(packageJsonPath, name) {
+		// A bit of bootstrapping, making some properties not enumerable for easier logging & debugging.
+		var hidden = {writable: true, enumerable: false}
+		Object.defineProperties(this, {
+			packageJsonPath: hidden,
+			packageJson: hidden,
+			ready: hidden
+		})
+		// Assign values
+		this.name = name
+		this.packageJsonPath = packageJsonPath
+		this.ready = this.load()
 	}
 
-	var projectModulesPath = getModulesPath(projectPath)
-	var installed = (await fs.readdir(projectModulesPath))
-	installed
-		.filter(name => !name.startsWith('.'))
-		.forEach(name => {
-			unusedModules.add(name)
-			subTrees.set(name, {})
-		})
-	//console.log(folders)
-	var projectPackagePath = getPackagePath(projectPath)
-	var {dependencies, devDependencies} = await getPackageDeps(projectPackagePath)
-	console.log(dependencies)
+	async load() {
+		try {
+			var pkgJson = await JSON.parse(await fs.readFile(this.packageJsonPath))
+			this.name = pkgJson.name || this.name
+			this.version = pkgJson.version
+			this.dependencies    = Object.keys(pkgJson.dependencies || {})
+			this.devDependencies = Object.keys(pkgJson.devDependencies || {})
+			this.packageJson = true
+		} catch(err) {
+			this.packageJson = false
+		}
+		return this
+	}
 
-	var tree = root
-	dependencies.map(name => tree[name] = subTrees.get(name))
-	devDependencies.map(name => tree[name] = subTrees.get(name))
-	await Promise.all(dependencies.map(resolveModule))
-	await Promise.all(devDependencies.map(resolveModule))
-
-	console.log('unusedModules', unusedModules)
-
-	return root
 }
 
-async function getPackageDeps(packagePath) {
-	var package = JSON.parse(await fs.readFile(packagePath))
-	var dependencies = Object.keys(package.dependencies || {})
-	var devDependencies = Object.keys(package.devDependencies || {})
-	return {dependencies, devDependencies}
-}
-
-createTree(projectPath).then(tree => console.log('\n\n', tree))
 
 
 
-module.exports = {
-	getProjectPath, getPackagePath, getModulesPath
-}
+var projectPath = 'C:/Users/Mike/OneDrive/Dev/anchora'
+
+var modules = new ProjectModules(projectPath)
+modules.createTree(projectPath).then(tree => console.log('\n\n\n', tree))
+
+//createTree(projectPath).then(tree => console.log('\n\n', tree))
+
+
+
+module.exports = {getProjectPath, getPackageJsonPath, getNodeModulesPath}
