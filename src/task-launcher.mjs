@@ -1,4 +1,4 @@
-import {spawn, exec, open} from './child-launcher.mjs'
+import {spawn, exec, open} from './child-proc.mjs'
 
 
 //open('rollup -c', {cwd: 'C:/Users/Mike/OneDrive/Dev/iso-app'})

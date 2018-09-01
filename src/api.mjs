@@ -35,7 +35,11 @@ export async function repo(...args) {
 			var [githubUserName, githubRepoName] = gh
 		console.log(gh)
 	}
+	console.log('typeof repo', repo)
+	console.log('typeof module', module)
 }
+
+npm.module('mikekasdovarikk').then(console.log).catch(console.error)
 
 //repo('Sombra')
 

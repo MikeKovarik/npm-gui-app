@@ -1,6 +1,12 @@
+import * as npm from './api-npm.mjs'
+import * as github from './api-github.mjs'
 import * as api from './api.mjs'
 import platform from '../node_modules/platform-detect/index.mjs'
 
+
+global.npm = npm
+global.github = github
+global.api = api
 
 function createElement(name, content) {
 	var node = document.createElement(name)
