@@ -1,6 +1,7 @@
 import * as npm from './api-npm.mjs'
 import * as github from './api-github.mjs'
-import platform from './node_modules/platform-detect/index.mjs'
+import platform from '../node_modules/platform-detect/index.mjs'
+
 
 function createElement(name, content) {
 	var node = document.createElement(name)
@@ -11,7 +12,10 @@ function createElement(name, content) {
 function logResult(heading, data) {
 	if (platform.browser) {
 		document.body.append(createElement('h1', heading))
-		document.body.append(createElement('pre', JSON.stringify(data, null, 2)))
+		var stringData = JSON.stringify(data, null, 2)
+		if (stringData.length === 2)
+			stringData = data.toString()
+		document.body.append(createElement('pre', stringData))
 	} else {
 		console.log('\n\n')
 		console.log(heading.toUpperCase())
@@ -21,7 +25,7 @@ function logResult(heading, data) {
 }
 
 
-/*
+
 npm.downloads('iridescent')
 	.then(data => logResult('npm.downloads - iridescent', data))
 	.catch(err => logResult('npm.downloads - iridescent', err))
@@ -29,9 +33,9 @@ npm.downloads('iridescent')
 npm.score('iridescent')
 	.then(data => logResult('npm.score - iridescent', data))
 	.catch(err => logResult('npm.score - iridescent', err))
-*/
 
-/*
+
+
 github.repos('mikekovarik')
 	.then(data => logResult('github.repos - mikekovarik', data))
 	.catch(err => logResult('github.repos - mikekovarik', err))
@@ -39,7 +43,7 @@ github.repos('mikekovarik')
 npm.modules('mikekovarik')
 	.then(data => logResult('npm.modules - mikekovarik', data))
 	.catch(err => logResult('npm.modules - mikekovarik', err))
-*/
+
 
 npm.module('iridescent')
 	.then(data => logResult('npm.module - iridescent', data))

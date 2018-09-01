@@ -1,7 +1,9 @@
-import './platform-polyfill.js'
+import './platform-polyfill.mjs'
 
 
+// WARNING: neither endpoints support CORS
 export async function module(name) {
+	//var res = await fetch(`https://skimdb.npmjs.com/registry/${name}`)
 	var res = await fetch(`https://registry.npmjs.org/${name}`)
 	var pkg = await res.json()
 	pkg.author = pkg.author.name

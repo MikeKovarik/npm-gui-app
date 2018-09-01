@@ -1,53 +1,7 @@
-import _path from 'path'
-import _fs from 'fs'
-var path = _path.posix
-var fs = _fs.promises
+import {fs} from './platform-polyfill.mjs' // import fs from 'fs'
+//import path from './path.mjs' // import path from 'path'
+import {getProjectPath, getPackageJsonPath, getNodeModulesPath} from './src/util.mjs'
 
-
-export function getProjectPath(somePath) {
-	var parsed = path.parse(somePath)
-	if (parsed.base === 'node_modules' || parsed.base === 'package.json')
-		return parsed.dir
-	if (parsed.ext === '')
-		return somePath
-	return parsed.dir
-}
-
-export function getPackageJsonPath(somePath) {
-	var parsed = path.parse(somePath)
-	if (parsed.base === 'package.json')
-		return somePath
-	if (parsed.base === 'node_modules' || parsed.ext !== '')
-		return path.join(parsed.dir, 'package.json')
-	if (parsed.ext === '')
-		return path.join(somePath, 'package.json')
-}
-
-export function getNodeModulesPath(somePath) {
-	var parsed = path.parse(somePath)
-	if (parsed.ext !== '')
-		return path.join(parsed.dir, 'node_modules')
-	if (parsed.base === 'node_modules')
-		return somePath
-	return path.join(somePath, 'node_modules')
-}
-
-Array.prototype.promiseAll = function() {
-	return Promise.all(this)
-}
-
-Array.prototype.flat = function(depth = 1) {
-	var stack = [...this]
-	var res = []
-	while (stack.length) {
-		var next = stack.pop()
-		if (Array.isArray(next))
-			stack.push(...next)
-		else
-			res.push(next)
-	}
-	return res.reverse()
-}
 
 
 class ProjectModules {
@@ -199,10 +153,10 @@ export class Package {
 
 
 
-
+/*
 var projectPath = 'C:/Users/Mike/OneDrive/Dev/anchora'
 
 var modules = new ProjectModules(projectPath)
 modules.createTree(projectPath).then(tree => console.log('\n\n\n', tree))
-
+*/
 //createTree(projectPath).then(tree => console.log('\n\n', tree))

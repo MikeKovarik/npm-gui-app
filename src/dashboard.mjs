@@ -4,7 +4,7 @@ import * as npm from './npmapi.mjs'
 // poor man's named import
 // in other words: FUCK YOU W3C, WHATWG, GOOGLE, MICROSOFT & APPLE FOR LEAVING ESM HALF ASSED.
 //var platform = window['platform-detect']
-import platform from './node_modules/platform-detect/index.mjs'
+import platform from '../node_modules/platform-detect/index.mjs'
 
 platform.fluent = platform.windows
 platform.material = !platform.fluent
