@@ -1,3 +1,6 @@
+import './platform-polyfill.js'
+
+
 export async function module(name) {
 	var res = await fetch(`https://registry.npmjs.org/${name}`)
 	var pkg = await res.json()

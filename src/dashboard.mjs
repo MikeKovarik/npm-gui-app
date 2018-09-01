@@ -1,9 +1,10 @@
 import {renderModuleCard} from './card.mjs'
 import {renderEmojiIntoCanvas, getEmojis} from './emoji.mjs'
-import * as npm from '../npmapi.mjs'
+import * as npm from './npmapi.mjs'
 // poor man's named import
 // in other words: FUCK YOU W3C, WHATWG, GOOGLE, MICROSOFT & APPLE FOR LEAVING ESM HALF ASSED.
-var platform = window['platform-detect']
+//var platform = window['platform-detect']
+import platform from './node_modules/platform-detect/index.mjs'
 
 platform.fluent = platform.windows
 platform.material = !platform.fluent
@@ -29,7 +30,9 @@ async function main() {
 	modules.push({local: true, name: 'flexus', description: '👓 Multiplatform app development framework'})
 
 	// also filter out modules that have no emoji for now
-	modules = modules.filter(module => getEmojis(module.description).length > 0)
+	var withEmoji    = modules.filter(module => getEmojis(module.description).length > 0)
+	var withoutEmoji = modules.filter(module => getEmojis(module.description).length === 0)
+	modules = [...withEmoji, ...withoutEmoji]
 
 	console.log(modules)
 	modules.forEach(renderModule)
@@ -72,12 +75,12 @@ function renderModule(pkg) {
 
 
 function hashCode(string) {
-    var hash = 0;
-    if (string.length == 0) return hash;
-    for (i = 0; i < string.length; i++) {
-        char = string.charCodeAt(i);
-        hash = ((hash<<5)-hash)+char;
-        hash = hash & hash; // Convert to 32bit integer
+    var hash = 0
+    if (string.length == 0) return hash
+    for (var i = 0; i < string.length; i++) {
+        var char = string.charCodeAt(i)
+        hash = ((hash<<5)-hash)+char
+        hash = hash & hash // Convert to 32bit integer
     }
-    return hash;
+    return hash
 }

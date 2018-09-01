@@ -1,9 +1,10 @@
-var path = require('path').posix
-var fs = require('fs').promises
+import _path from 'path'
+import _fs from 'fs'
+var path = _path.posix
+var fs = _fs.promises
 
-// TODO: handle @scoped/modules
 
-function getProjectPath(somePath) {
+export function getProjectPath(somePath) {
 	var parsed = path.parse(somePath)
 	if (parsed.base === 'node_modules' || parsed.base === 'package.json')
 		return parsed.dir
@@ -12,7 +13,7 @@ function getProjectPath(somePath) {
 	return parsed.dir
 }
 
-function getPackageJsonPath(somePath) {
+export function getPackageJsonPath(somePath) {
 	var parsed = path.parse(somePath)
 	if (parsed.base === 'package.json')
 		return somePath
@@ -22,7 +23,7 @@ function getPackageJsonPath(somePath) {
 		return path.join(somePath, 'package.json')
 }
 
-function getNodeModulesPath(somePath) {
+export function getNodeModulesPath(somePath) {
 	var parsed = path.parse(somePath)
 	if (parsed.ext !== '')
 		return path.join(parsed.dir, 'node_modules')
@@ -100,11 +101,11 @@ class ProjectModules {
 	}
 
 	async loadRoot() {
-		this.pkgInfo = new PackageInfo(this.packageJsonPath)
-		var {name, dependencies, devDependencies} = await this.pkgInfo.ready
+		this.pkgInfo = new Package(this.packageJsonPath)
+		var {name, deps, devDeps} = await this.pkgInfo.ready
 		// Create root of tree.
 		var root = this.getSubTree(name)
-		for (var name of [...dependencies, ...devDependencies]) {
+		for (var name of [...deps, ...devDeps]) {
 			this.required.add(name)
 			root[name] = this.getSubTree(name)
 		}
@@ -143,19 +144,21 @@ class ProjectModules {
 		this.installed.add(name)
 
 		var packageJsonPath = path.join(this.nodeModulesPath, name, 'package.json')
-		var pkgInfo = new PackageInfo(packageJsonPath, name)
+		var pkgInfo = new Package(packageJsonPath, name)
 		await pkgInfo.ready
 
 		var removeFromUnused = depName => this.unused.delete(depName)
-		if (pkgInfo.dependencies)    pkgInfo.dependencies.map(removeFromUnused)
-		if (pkgInfo.devDependencies) pkgInfo.devDependencies.map(removeFromUnused)
+		//if (pkgInfo.deps)    pkgInfo.deps.map(removeFromUnused)
+		//if (pkgInfo.devDeps) pkgInfo.devDeps.map(removeFromUnused)
+		;[...pkgInfo.deps, ...pkgInfo.devDeps].map(removeFromUnused)
 
 		this.resolved.set(name, pkgInfo)
-		if (pkgInfo.dependencies)    await Promise.all(pkgInfo.dependencies.map(this.resolvePackage))
-		//if (pkgInfo.devDependencies) await Promise.all(pkgInfo.devDependencies.map(this.resolvePackage))
+		await Promise.all([...pkgInfo.deps, ...pkgInfo.devDeps].map(this.resolvePackage))
+		//if (pkgInfo.deps)    await Promise.all(pkgInfo.deps.map(this.resolvePackage))
+		//if (pkgInfo.devDeps) await Promise.all(pkgInfo.devDeps.map(this.resolvePackage))
 
 		var tree = this.getSubTree(name)
-		for (var depName of [...pkgInfo.dependencies, ...pkgInfo.devDependencies])
+		for (var depName of [...pkgInfo.deps, ...pkgInfo.devDeps])
 			tree[depName] = this.getSubTree(depName)
 
 		return pkgInfo
@@ -170,33 +173,25 @@ class ProjectModules {
 	
 }
 
-class PackageInfo {
+
+
+export class Package {
 
 	constructor(packageJsonPath, name) {
-		// A bit of bootstrapping, making some properties not enumerable for easier logging & debugging.
-		var hidden = {writable: true, enumerable: false}
-		Object.defineProperties(this, {
-			packageJsonPath: hidden,
-			packageJson: hidden,
-			ready: hidden
-		})
-		// Assign values
 		this.name = name
 		this.packageJsonPath = packageJsonPath
+		this.dependencies    = {}
+		this.devDependencies = {}
 		this.ready = this.load()
 	}
 
 	async load() {
 		try {
-			var pkgJson = await JSON.parse(await fs.readFile(this.packageJsonPath))
-			this.name = pkgJson.name || this.name
-			this.version = pkgJson.version
-			this.dependencies    = Object.keys(pkgJson.dependencies || {})
-			this.devDependencies = Object.keys(pkgJson.devDependencies || {})
-			this.packageJson = true
-		} catch(err) {
-			this.packageJson = false
-		}
+			var buffer = await fs.readFile(this.packageJsonPath)
+			Object.assign(this, JSON.parse(buffer.toString()))
+		} catch(err) {}
+		this.deps    = Object.keys(this.dependencies || {})
+		this.devDeps = Object.keys(this.devDependencies || {})
 		return this
 	}
 
@@ -211,7 +206,3 @@ var modules = new ProjectModules(projectPath)
 modules.createTree(projectPath).then(tree => console.log('\n\n\n', tree))
 
 //createTree(projectPath).then(tree => console.log('\n\n', tree))
-
-
-
-module.exports = {getProjectPath, getPackageJsonPath, getNodeModulesPath}
