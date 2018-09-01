@@ -32,6 +32,8 @@ Array.prototype.promiseAll = function() {
 /////////////////////////////// UTIL FUNCTIONS ////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+export var noop = () => {}
+
 export function getProjectPath(somePath) {
 	var parsed = path.parse(somePath)
 	if (parsed.base === 'node_modules' || parsed.base === 'package.json')

@@ -2,13 +2,14 @@ import './platform-polyfill.mjs'
 import {exec} from './child-proc.mjs'
 
 
+
 // WARNING: neither endpoints support CORS
 // Will return undefined of the moduel doesn't exist.
 export async function module(name) {
 	//var res = await fetch(`https://skimdb.npmjs.com/registry/${name}`)
 	var res = await fetch(`https://registry.npmjs.org/${name}`)
 	var pkg = await res.json()
-	if (pkg.error) return
+	if (pkg.error) throw new Error(pkg.error)
 	pkg.author = pkg.author.name
 	pkg.modifiedTime = pkg.time.modified
 	pkg.createdTime = pkg.time.created
@@ -41,8 +42,12 @@ export async function user(username) {
 	if (username === undefined) {
 		// User local NPM to detect self.
 		// Will include email, github.
-		var json = (await exec('npm profile get --json')).stdout
-		return JSON.parse(json)
+		var user = (await exec('npm profile get --json')).stdout
+		user.created_at = new Date(user.created)
+		user.updated_at = new Date(user.updated)
+		delete user.created
+		delete user.updated
+		return JSON.parse(user)
 	} else {
 		// TODO
 		// WARNING: this request also doesnt support cors
@@ -66,7 +71,7 @@ export async function downloads(name, period = 'last-month') {
 }
 
 function sanitizeObject(object) {
-	for (var [key, val] in Object.entries(object)) {
+	for (var [key, val] of Object.entries(object)) {
 		if (key.startsWith('_')) {
 			delete object[key]
 			continue

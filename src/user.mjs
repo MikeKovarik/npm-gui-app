@@ -1,9 +1,10 @@
 import * as npm from './api-npm.mjs'
 import * as github from './api-github.mjs'
 import {spawnExec, spawn, exec} from './child-proc.mjs'
+import {noop} from './util.mjs'
 
 
-
+// maybe move this to api-npm as login-local ??? or keep the name since web doesnt suppod oauth
 function login(username, password, email) {
 	//var npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 	var proc = spawn(npmCmd, ['login'])
@@ -18,14 +19,12 @@ export var user = {
 	//loggedIn: false,
 }
 
-// Start autologin and assign the promise as nonenumerable 'ready' property.
+// Start getUserInfo and assign the promise as nonenumerable 'ready' property.
 Object.defineProperty(user, 'ready', {
-	value: autologin()
+	value: getUserInfo()
 })
 
-var noop = () => {}
-
-async function autologin() {
+async function getUserInfo() {
 	await getNpmInfo().catch(noop)
 	await getGithubInfo().catch(noop)
 }
